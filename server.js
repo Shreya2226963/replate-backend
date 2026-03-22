@@ -10,10 +10,25 @@ if (process.env.NODE_ENV !== 'production') {
 
 const app = express();
 
-// ===== CORS - Simple and working =====
+// ===== CORS - Allow specific frontend domains =====
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://replate-frontend-ljif.vercel.app'
+];
+
 app.use(cors({
-  origin: true,
-  credentials: true
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      console.log('Blocked origin:', origin);
+      return callback(new Error('CORS not allowed'), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // ===== Middleware =====
@@ -67,12 +82,12 @@ const PORT = process.env.PORT || 5000;
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
   })
   .catch(err => {
     console.error('❌ MongoDB error:', err);
+    process.exit(1);
   });
-
 
